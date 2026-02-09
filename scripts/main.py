@@ -137,3 +137,64 @@ def Comp_seq(old,new):#השוואה בין החלבון הקודם לחדש אח
 
 
 
+#main program
+Y_OR_N=input("Does the woman have a family genetic background and does she have one mutation in BRCA1,2 or not? (Y=Yes, N=No)")
+
+if Y_OR_N == "Y":
+    mutations_needed = 1
+else:
+    mutations_needed = 2
+
+DNA_original = file_to_str(human_p53_coding)
+#dictinary
+RNA_codon_table = Read_dict(codon_AA)
+#original protein
+RNA_original = DNA_RNA_Cod(DNA_original)
+protein_original = RNA_prot(RNA_original, RNA_codon_table)
+#1000 times simulations
+runs = 1000
+generations_list = []
+mutation_rate= 1e-4
+for run in range(runs):
+    gen = 0
+    hits = 0
+
+    DNA_current = DNA_original
+    protein_current = protein_original
+
+    while hits < mutations_needed:
+        gen += 1
+        if random.random() > mutation_rate:#אם אין מוטציות בדור הזה נמשיך להבא
+            continue
+        random_percent = random.randrange(1,101) 
+        if random_percent <= 98:  # החלפת בסיס
+            DNA_mut = Mutate_DNA(DNA_current)
+        elif random_percent == 99:  # הוספה של בסיס
+            DNA_mut = insertion(DNA_current)
+        else:  # מחיקה של בסיס
+            DNA_mut = deletion(DNA_current)
+        #תרגום לחלבון
+        RNA_mut = DNA_RNA_Cod(DNA_mut)
+        protein_mut = RNA_prot(RNA_mut, RNA_codon_table)
+
+        if Comp_seq(protein_current, protein_mut) > 0:#בודק אם החלבון השתנה ביחס לחלבון הנוכחי
+            hits+=1
+            protein_current = protein_mut
+        
+        DNA_current = DNA_mut#עובר לדור הבא עם הדנא החדש
+    generations_list.append(gen)
+
+
+#ממוצע והדפסה 
+if Y_OR_N == "Y":
+    print("For a female that does have BRCA1,2 Mutation:")
+elif Y_OR_N == "N":
+    print("For a female that does/ doesn't not have BRCA1,2 Mutation:")
+
+avg_generations = sum(generations_list) / len(generations_list)
+avg_years = avg_generations / 365
+print("The mutation that will change the P53 protein will take in average %.2f years." %avg_years)
+
+#סגירת קצבים (:
+human_p53_coding.close()
+codon_AA.close()
